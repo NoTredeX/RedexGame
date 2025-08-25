@@ -7,9 +7,11 @@ echo "Starting deployment of Redex Game Bot..."
 # 1. Check and manage lock file
 LOCK_FILE="/tmp/deploy.lock"
 if [ -f "$LOCK_FILE" ]; then
-    echo "Another deployment process is running. Attempting to stop it..."
+    echo "Another deployment process is running. Stopping it..."
     kill -9 $(cat "$LOCK_FILE") 2>/dev/null
     rm -f "$LOCK_FILE"
+    # Kill any running bot or web processes
+    pkill -f "python3.*(bot.py|web.py)" 2>/dev/null
     sleep 2
 fi
 echo $$ > "$LOCK_FILE"
@@ -19,23 +21,28 @@ echo "Updating system and installing prerequisites..."
 apt update && apt upgrade -y
 apt install -y python3 python3-pip python3-venv mysql-server docker.io git
 
-# 3. Install Docker Compose
+# 3. Start Docker service
+echo "Starting Docker service..."
+systemctl start docker
+systemctl enable docker
+
+# 4. Install Docker Compose
 echo "Installing Docker Compose..."
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 curl -L "https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-# 4. Install Python modules with no cache and force reinstall
+# 5. Install Python modules with no cache and force reinstall
 echo "Installing Python modules with no cache and force reinstall..."
 pip3 install --no-cache-dir --force-reinstall "python-telegram-bot[job-queue]==22.3" mysql-connector-python==9.4.0 python-dotenv==1.1.1 requests==2.32.5 flask==3.1.1
 
-# 5. Create project directory
+# 6. Create project directory
 echo "Creating project directory..."
 mkdir -p /root/RedexGame/telegrambot
 cd /root/RedexGame/telegrambot
 
-# 6. Clone or update repository from GitHub
+# 7. Clone or update repository from GitHub
 echo "Cloning or updating repository from GitHub..."
 if [ -d ".git" ]; then
     git pull origin main
@@ -45,7 +52,7 @@ else
     rm -rf temp_repo
 fi
 
-# 7. Prompt for user input
+# 8. Prompt for user input
 echo "Please enter the required information:"
 read -p "Enter BOT_TOKEN: " bot_token
 read -p "Enter ADMIN_ID (numeric ID, e.g., 1631919159): " admin_id
@@ -58,7 +65,7 @@ if [ -z "$mysql_password" ]; then
     echo "Generated MYSQL_PASSWORD: $mysql_password"
 fi
 
-# 8. Create .env file with UTF-8 encoding and database host
+# 9. Create .env file with UTF-8 encoding and database host
 echo "Creating .env file..."
 cat > .env << EOL
 BOT_TOKEN=$bot_token
@@ -70,7 +77,7 @@ IPDNS2=$ipdns2
 MYSQL_HOST=db
 EOL
 
-# 9. Set up MySQL database
+# 10. Set up MySQL database
 echo "Setting up MySQL database..."
 mysql -u root << EOL
 CREATE DATABASE IF NOT EXISTS dnsbot;
@@ -79,9 +86,13 @@ GRANT ALL PRIVILEGES ON dnsbot.* TO 'root'@'localhost';
 FLUSH PRIVILEGES;
 EOL
 
-# 10. Apply database schema directly
+# 11. Apply database schema directly with index check
 echo "Applying database schema..."
 mysql -u root -p"$mysql_password" dnsbot << 'EOL'
+DROP INDEX IF EXISTS idx_services_telegram_id ON services;
+DROP INDEX IF EXISTS idx_pending_payments_telegram_id ON pending_payments;
+DROP INDEX IF EXISTS idx_pending_payments_service_id ON pending_payments;
+
 CREATE TABLE IF NOT EXISTS users (
     telegram_id VARCHAR(255) PRIMARY KEY,
     blocked BOOLEAN DEFAULT FALSE,
@@ -124,7 +135,7 @@ CREATE INDEX idx_pending_payments_telegram_id ON pending_payments(telegram_id);
 CREATE INDEX idx_pending_payments_service_id ON pending_payments(service_id);
 EOL
 
-# 11. Create docker-compose.yml
+# 12. Create docker-compose.yml
 echo "Creating docker-compose.yml..."
 cat > docker-compose.yml << EOL
 version: '3'
@@ -145,21 +156,22 @@ volumes:
   db_data:
 EOL
 
-# 12. Start Docker containers with delay
+# 13. Start Docker containers with delay
 echo "Starting Docker containers with delay..."
 docker compose up -d
 sleep 10  # Wait for MySQL to start
 
-# 13. Set up Python virtual environment and run bot
-echo "Setting up Python virtual environment..."
+# 14. Free port 5000 and set up Python virtual environment
+echo "Freeing port 5000 and setting up Python virtual environment..."
+fuser -k 5000/tcp 2>/dev/null
 python3 -m venv venv
 source venv/bin/activate
 pip install --no-cache-dir -r requirements.txt
 python3 bot.py &
-python3 web.py &
+FLASK_APP=web.py FLASK_RUN_PORT=5001 python3 -m flask run --no-debugger &
 deactivate
 
-# 14. Clean up lock file
+# 15. Clean up lock file
 rm -f "$LOCK_FILE"
 
 echo "Deployment completed successfully!"
