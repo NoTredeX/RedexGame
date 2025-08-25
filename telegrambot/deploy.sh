@@ -156,14 +156,23 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-volumes:
-  db_data:
+    networks:
+      - app_network
+networks:
+  app_network:
+    driver: bridge
 EOL
 
-# 14. Start Docker containers with delay
+# 14. Start Docker containers with delay and check
 echo "Starting Docker containers with delay..."
 docker compose up -d
 sleep 10  # Wait for MySQL to start
+if ! docker ps -q | grep -q .; then
+    echo "Error: Docker container failed to start. Restarting..."
+    docker compose down
+    docker compose up -d
+    sleep 10
+fi
 
 # 15. Free port 5000 and set up Python virtual environment
 echo "Freeing port 5000 and setting up Python virtual environment..."
