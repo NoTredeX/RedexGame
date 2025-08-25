@@ -130,19 +130,16 @@ volumes:
   db_data:
 EOL
 
-# 11. Start Docker containers
-echo "Starting Docker containers..."
+# 11. Start Docker containers with delay
+echo "Starting Docker containers with delay..."
 docker compose up -d
+sleep 10  # Wait for MySQL to start
 
-# 12. Set up Python virtual environment and verify modules
+# 12. Set up Python virtual environment and run bot
 echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
 pip install --no-cache-dir --force-reinstall -r requirements.txt
-if ! python3 -c "import flask; import telegram.ext" 2>/dev/null; then
-    echo "Error: Required modules (flask or telegram) not found. Reinstalling..."
-    pip install --no-cache-dir --force-reinstall "python-telegram-bot[job-queue]==22.3" flask==3.1.1
-fi
 python3 bot.py &
 python3 web.py &
 deactivate
