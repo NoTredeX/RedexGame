@@ -1,37 +1,51 @@
 #!/bin/bash
 
-# Deploy script for Redex Game Bot
+# Deploy script for Redex Game Bot with update capability
 
 echo "Starting deployment of Redex Game Bot..."
 
-# 1. Update system and install prerequisites
+# 1. Check and manage lock file
+LOCK_FILE="/tmp/deploy.lock"
+if [ -f "$LOCK_FILE" ]; then
+    echo "Another deployment process is running. Attempting to stop it..."
+    kill -9 $(cat "$LOCK_FILE") 2>/dev/null
+    rm -f "$LOCK_FILE"
+    sleep 2
+fi
+echo $$ > "$LOCK_FILE"
+
+# 2. Update system and install prerequisites
 echo "Updating system and installing prerequisites..."
 apt update && apt upgrade -y
 apt install -y python3 python3-pip python3-venv mysql-server docker.io git
 
-# 2. Install Docker Compose
+# 3. Install Docker Compose
 echo "Installing Docker Compose..."
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 curl -L "https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-# 3. Install Python modules with no cache and force reinstall
+# 4. Install Python modules with no cache and force reinstall
 echo "Installing Python modules with no cache and force reinstall..."
 pip3 install --no-cache-dir --force-reinstall "python-telegram-bot[job-queue]==22.3" mysql-connector-python==9.4.0 python-dotenv==1.1.1 requests==2.32.5 flask==3.1.1
 
-# 4. Create project directory
+# 5. Create project directory
 echo "Creating project directory..."
 mkdir -p /root/RedexGame/telegrambot
 cd /root/RedexGame/telegrambot
 
-# 5. Clone repository from GitHub
-echo "Cloning repository from GitHub..."
-git clone https://github.com/NoTredeX/RedexGame.git temp_repo
-cp -r temp_repo/telegrambot/* .
-rm -rf temp_repo
+# 6. Clone or update repository from GitHub
+echo "Cloning or updating repository from GitHub..."
+if [ -d ".git" ]; then
+    git pull origin main
+else
+    git clone https://github.com/NoTredeX/RedexGame.git temp_repo
+    cp -r temp_repo/telegrambot/* .
+    rm -rf temp_repo
+fi
 
-# 6. Prompt for user input
+# 7. Prompt for user input
 echo "Please enter the required information:"
 read -p "Enter BOT_TOKEN: " bot_token
 read -p "Enter ADMIN_ID (numeric ID, e.g., 1631919159): " admin_id
@@ -44,7 +58,7 @@ if [ -z "$mysql_password" ]; then
     echo "Generated MYSQL_PASSWORD: $mysql_password"
 fi
 
-# 7. Create .env file with UTF-8 encoding
+# 8. Create .env file with UTF-8 encoding and database host
 echo "Creating .env file..."
 cat > .env << EOL
 BOT_TOKEN=$bot_token
@@ -53,9 +67,10 @@ MYSQL_USER=root
 MYSQL_PASSWORD=$mysql_password
 IPDNS1=$ipdns1
 IPDNS2=$ipdns2
+MYSQL_HOST=db
 EOL
 
-# 8. Set up MySQL database
+# 9. Set up MySQL database
 echo "Setting up MySQL database..."
 mysql -u root << EOL
 CREATE DATABASE IF NOT EXISTS dnsbot;
@@ -64,7 +79,7 @@ GRANT ALL PRIVILEGES ON dnsbot.* TO 'root'@'localhost';
 FLUSH PRIVILEGES;
 EOL
 
-# 9. Apply database schema directly
+# 10. Apply database schema directly
 echo "Applying database schema..."
 mysql -u root -p"$mysql_password" dnsbot << 'EOL'
 CREATE TABLE IF NOT EXISTS users (
@@ -109,7 +124,7 @@ CREATE INDEX idx_pending_payments_telegram_id ON pending_payments(telegram_id);
 CREATE INDEX idx_pending_payments_service_id ON pending_payments(service_id);
 EOL
 
-# 10. Create docker-compose.yml
+# 11. Create docker-compose.yml
 echo "Creating docker-compose.yml..."
 cat > docker-compose.yml << EOL
 version: '3'
@@ -130,18 +145,21 @@ volumes:
   db_data:
 EOL
 
-# 11. Start Docker containers with delay
+# 12. Start Docker containers with delay
 echo "Starting Docker containers with delay..."
 docker compose up -d
 sleep 10  # Wait for MySQL to start
 
-# 12. Set up Python virtual environment and run bot
+# 13. Set up Python virtual environment and run bot
 echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
-pip install --no-cache-dir --force-reinstall -r requirements.txt
+pip install --no-cache-dir -r requirements.txt
 python3 bot.py &
 python3 web.py &
 deactivate
+
+# 14. Clean up lock file
+rm -f "$LOCK_FILE"
 
 echo "Deployment completed successfully!"
