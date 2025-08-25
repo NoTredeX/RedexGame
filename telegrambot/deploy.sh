@@ -7,53 +7,66 @@ echo "Starting deployment of Redex Game Bot..."
 # 1. Update system and install prerequisites
 echo "Updating system and installing prerequisites..."
 apt update && apt upgrade -y
-apt install -y python3 python3-pip python3-venv mysql-server docker.io docker-compose-plugin git
+apt install -y python3 python3-pip python3-venv mysql-server docker.io git
 
-# 2. Install required Python modules with specific versions
+# 2. Install Docker Compose
+echo "Installing Docker Compose..."
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+curl -L "https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
+# 3. Install Python modules
 echo "Installing Python modules..."
-pip3 install python-telegram-bot==22.3 mysql-connector-python==9.4.0 python-dotenv==1.1.1 requests==2.32.5 flask==3.1.1
+pip3 install "python-telegram-bot[job-queue]==22.3" mysql-connector-python==9.4.0 python-dotenv==1.1.1 requests==2.32.5 flask==3.1.1
 
-# 3. Create project directory
+# 4. Create project directory
 echo "Creating project directory..."
 mkdir -p /root/RedexGame/telegrambot
 cd /root/RedexGame/telegrambot
 
-# 4. Clone repository from GitHub
+# 5. Clone repository from GitHub
 echo "Cloning repository from GitHub..."
 git clone https://github.com/NoTredeX/RedexGame.git temp_repo
 cp -r temp_repo/telegrambot/* .
 rm -rf temp_repo
 
-# 5. Prompt for user input
+# 6. Prompt for user input
 echo "Please enter the required information:"
 read -p "Enter BOT_TOKEN: " bot_token
-read -p "Enter MYSQL_USER: " mysql_user
-read -s -p "Enter MYSQL_PASSWORD: " mysql_password
-echo
+read -p "Enter ADMIN_ID (numeric ID, e.g., 1631919159): " admin_id
 read -p "Enter IPDNS1: " ipdns1
 read -p "Enter IPDNS2: " ipdns2
+echo "Enter MYSQL_PASSWORD (press Enter to generate a random password):"
+read -s mysql_password
+if [ -z "$mysql_password" ]; then
+    mysql_password=$(openssl rand -base64 12)
+    echo "Generated MYSQL_PASSWORD: $mysql_password"
+fi
 
-# 6. Create .env file with UTF-8 encoding
+# 7. Create .env file with UTF-8 encoding
 echo "Creating .env file..."
 cat > .env << EOL
 BOT_TOKEN=$bot_token
-MYSQL_USER=$mysql_user
+ADMIN_ID=$admin_id
+MYSQL_USER=root
 MYSQL_PASSWORD=$mysql_password
 IPDNS1=$ipdns1
 IPDNS2=$ipdns2
 EOL
 
-# 7. Set up MySQL database
+# 8. Set up MySQL database
 echo "Setting up MySQL database..."
-mysql -u root -p << EOL
+mysql -u root << EOL
 CREATE DATABASE IF NOT EXISTS dnsbot;
-GRANT ALL PRIVILEGES ON dnsbot.* TO '$mysql_user'@'localhost' IDENTIFIED BY '$mysql_password';
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$mysql_password';
+GRANT ALL PRIVILEGES ON dnsbot.* TO 'root'@'localhost';
 FLUSH PRIVILEGES;
 EOL
 
-# 8. Apply database schema directly
+# 9. Apply database schema directly
 echo "Applying database schema..."
-mysql -u "$mysql_user" -p"$mysql_password" dnsbot << 'EOL'
+mysql -u root -p"$mysql_password" dnsbot << 'EOL'
 CREATE TABLE IF NOT EXISTS users (
     telegram_id VARCHAR(255) PRIMARY KEY,
     blocked BOOLEAN DEFAULT FALSE,
@@ -96,7 +109,7 @@ CREATE INDEX idx_pending_payments_telegram_id ON pending_payments(telegram_id);
 CREATE INDEX idx_pending_payments_service_id ON pending_payments(service_id);
 EOL
 
-# 9. Create docker-compose.yml
+# 10. Create docker-compose.yml
 echo "Creating docker-compose.yml..."
 cat > docker-compose.yml << EOL
 version: '3'
@@ -107,7 +120,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: $mysql_password
       MYSQL_DATABASE: dnsbot
-      MYSQL_USER: $mysql_user
+      MYSQL_USER: root
       MYSQL_PASSWORD: $mysql_password
     ports:
       - "3307:3306"
@@ -117,11 +130,11 @@ volumes:
   db_data:
 EOL
 
-# 10. Start Docker containers
+# 11. Start Docker containers
 echo "Starting Docker containers..."
-docker-compose up -d
+docker compose up -d
 
-# 11. Set up Python virtual environment and run bot
+# 12. Set up Python virtual environment and run bot
 echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
