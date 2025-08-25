@@ -7,11 +7,11 @@ echo "Starting deployment of Redex Game Bot..."
 # 1. Update system and install prerequisites
 echo "Updating system and installing prerequisites..."
 apt update && apt upgrade -y
-apt install -y python3 python3-pip python3-venv mysql-server docker.io git
+apt install -y python3 python3-pip python3-venv mysql-server docker.io docker-compose-plugin git
 
-# 2. Install Python modules
+# 2. Install required Python modules with specific versions
 echo "Installing Python modules..."
-pip3 install python-telegram-bot mysql-connector-python python-dotenv requests
+pip3 install python-telegram-bot==22.3 mysql-connector-python==9.4.0 python-dotenv==1.1.1 requests==2.32.5 flask==3.1.1
 
 # 3. Create project directory
 echo "Creating project directory..."
@@ -33,7 +33,7 @@ echo
 read -p "Enter IPDNS1: " ipdns1
 read -p "Enter IPDNS2: " ipdns2
 
-# 6. Create .env file
+# 6. Create .env file with UTF-8 encoding
 echo "Creating .env file..."
 cat > .env << EOL
 BOT_TOKEN=$bot_token
