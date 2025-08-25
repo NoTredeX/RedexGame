@@ -134,11 +134,15 @@ EOL
 echo "Starting Docker containers..."
 docker compose up -d
 
-# 12. Set up Python virtual environment and run bot
+# 12. Set up Python virtual environment and verify modules
 echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
 pip install --no-cache-dir --force-reinstall -r requirements.txt
+if ! python3 -c "import flask; import telegram.ext" 2>/dev/null; then
+    echo "Error: Required modules (flask or telegram) not found. Reinstalling..."
+    pip install --no-cache-dir --force-reinstall "python-telegram-bot[job-queue]==22.3" flask==3.1.1
+fi
 python3 bot.py &
 python3 web.py &
 deactivate
