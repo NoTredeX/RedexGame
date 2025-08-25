@@ -144,7 +144,7 @@ CREATE INDEX idx_pending_payments_telegram_id ON pending_payments(telegram_id);
 CREATE INDEX idx_pending_payments_service_id ON pending_payments(service_id);
 EOL
 
-# 13. Create docker-compose.yml
+# 13. Create docker-compose.yml with corrected MySQL settings
 echo "Creating docker-compose.yml..."
 cat > docker-compose.yml << EOL
 version: '3'
@@ -155,13 +155,11 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: $mysql_password
       MYSQL_DATABASE: dnsbot
-      MYSQL_USER: root
-      MYSQL_PASSWORD: $mysql_password
     ports:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-    network_mode: host  # Use host network to ensure accessibility
+    network_mode: host
 volumes:
   db_data:
 EOL
