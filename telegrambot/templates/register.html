@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REDEX GAME - ثبت آی‌پی</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style type="text/css">@font-face {font-family:Orbitron;font-style:normal;font-weight:700;src:url(/cf-fonts/v/orbitron/5.0.18/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}</style>
+    <style>
+        body {
+            background: #F5F5F5;
+            overflow: hidden;
+            font-family: 'Vazirmatn', sans-serif;
+            color: #0A0A0A;
+        }
+        .speed-lines div {
+            position: fixed;
+            background: rgba(10, 10, 10, 0.3);
+            height: 2px;
+            width: 50px;
+            transform: rotate(-45deg);
+            animation: slide-line 2s ease-in-out infinite alternate;
+        }
+        @keyframes slide-line {
+            0% { transform: rotate(-45deg) translateX(-20px); }
+            100% { transform: rotate(-45deg) translateX(20px); }
+        }
+        .rocket-left {
+            position: fixed;
+            left: 10px;
+            top: 20%;
+            z-index: 0;
+        }
+        .rocket-center {
+            position: fixed;
+            left: 50%;
+            top: 30%;
+            transform: translate(-50%, -30%);
+            z-index: 0;
+        }
+        .rocket-right {
+            position: fixed;
+            right: 10px;
+            bottom: 20%;
+            z-index: 0;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0A0A0A;
+            letter-spacing: 3px;
+        }
+        .progress-bar {
+            height: 1rem;
+            background: linear-gradient(90deg, #000000, #4B5563);
+            border-radius: 0.5rem;
+            transition: width 0.3s ease;
+        }
+        .icon-animation {
+            width: 2.5rem;
+            height: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .checkmark {
+            display: none;
+            width: 5rem;
+            height: 5rem;
+            stroke: #22C55E;
+            stroke-width: 4;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .retry-button {
+            background: #0A0A0A;
+            color: #F5F5F5;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .logo { font-size: 2rem; }
+            .glass-panel { padding: 1rem; max-width: 95%; }
+            .rocket-left, .rocket-right { width: 100px !important; height: 100px !important; }
+            .rocket-center { width: 400px !important; height: 400px !important; top: 20%; }
+            .icon-animation { width: 2rem; height: 2rem; }
+            .checkmark { width: 4rem; height: 4rem; }
+            .progress-bar { height: 0.8rem; }
+            .speed-lines div { width: 30px; }
+        }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/fonts/webfonts/Vazirmatn-Regular.woff2') format('woff2');
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen relative">
+    <div class="speed-lines">
+        <div style="top: 10%; left: 10%;"></div>
+        <div style="top: 20%; right: 15%;"></div>
+        <div style="bottom: 15%; left: 20%;"></div>
+        <div style="bottom: 25%; right: 10%;"></div>
+    </div>
+    <iframe src="https://lottie.host/embed/6b4871f4-63d6-42bb-b634-41d7186672d6/HgdGLDgqe6.lottie" class="rocket-left" style="width: 200px; height: 200px"></iframe>
+    <iframe src="https://lottie.host/embed/6b4871f4-63d6-42bb-b634-41d7186672d6/HgdGLDgqe6.lottie" class="rocket-center" style="width: 900px; height: 900px"></iframe>
+    <iframe src="https://lottie.host/embed/6b4871f4-63d6-42bb-b634-41d7186672d6/HgdGLDgqe6.lottie" class="rocket-right" style="width: 300px; height: 300px"></iframe>
+    <div class="glass-panel text-center relative z-10">
+        <div class="logo mb-4" id="logo">REDEX GAME</div>
+        <div id="icon-container" class="flex justify-center">
+            <svg id="location-icon" class="icon-animation" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2">
+                <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/>
+                <circle cx="12" cy="9" r="3"/>
+            </svg>
+            <svg id="rocket-icon" class="icon-animation hidden" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2">
+                <path d="M12 2l3 9h6l-4 7-5-3-5 3-4-7h6l3-9z"/>
+                <path d="M12 18l-2 3 2 3 2-3-2-3z" fill="#FF4500" class="fire"/>
+            </svg>
+            <svg id="flash-icon" class="icon-animation hidden" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2">
+                <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
+            </svg>
+            <svg id="checkmark" class="checkmark" viewBox="0 0 24 24">
+                <path d="M4 12l6 6L20 6"/>
+            </svg>
+        </div>
+        <div class="text-base mb-3" id="status-text">در حال بررسی لوکیشن آی‌پی...</div>
+        <div class="w-full bg-gray-200 rounded-xl">
+            <div id="progress-bar" class="progress-bar w-0"></div>
+        </div>
+        <div class="text-sm mt-2" id="progress-text">0%</div>
+        <div id="error-message" class="text-red-600 mt-3 hidden"></div>
+        <button id="retry-button" class="retry-button mt-3 hidden">ثبت مجدد</button>
+    </div>
+
+    <script>
+        // Progress Bar Animation
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const progressText = document.getElementById('progress-text');
+        const errorMessage = document.getElementById('error-message');
+        const retryButton = document.getElementById('retry-button');
+        const locationIcon = document.getElementById('location-icon');
+        const rocketIcon = document.getElementById('rocket-icon');
+        const flashIcon = document.getElementById('flash-icon');
+        const checkmark = document.getElementById('checkmark');
+
+        async function updateProgress() {
+            const serviceId = "{{ service_id }}";
+            const telegramId = "{{ telegram_id }}";
+
+            try {
+                // Step 1: Check location (20%)
+                progressText.textContent = '20%';
+                anime({
+                    targets: progressBar,
+                    width: '20%',
+                    easing: 'easeInOutQuad',
+                    duration: 1500,
+                    update: function() {
+                        progressText.textContent = `${Math.round(parseFloat(progressBar.style.width))}%`;
+                    }
+                });
+                anime({
+                    targets: locationIcon,
+                    rotate: 360,
+                    easing: 'linear',
+                    duration: 1500,
+                    loop: true
+                });
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Get client IP
+                const ipResponse = await fetch('/api/get_client_ip', { method: 'GET' });
+                if (!ipResponse.ok) {
+                    throw new Error('!خطا در دریافت آی‌پی');
+                }
+                const ipData = await ipResponse.json();
+                const ip = ipData.ip;
+                console.log('Client IP:', ip);
+
+                // Register IP
+                const registerResponse = await fetch('/api/register_ip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip, service_id: serviceId, telegram_id: telegramId })
+                });
+                const data = await registerResponse.json();
+                console.log('Register IP response:', data);
+
+                if (!data.success) {
+                    statusText.textContent = data.message;
+                    progressBar.style.background = '#EF4444';
+                    progressText.style.color = '#EF4444';
+                    errorMessage.textContent = data.message.includes('فیلترشکن') ? data.message : 'مشکلی پیش آمد، لطفاً دوباره امتحان کنید!...';
+                    errorMessage.classList.remove('hidden');
+                    retryButton.classList.remove('hidden');
+                    return;
+                }
+
+                // Step 2: Send to server (50%)
+                locationIcon.classList.add('hidden');
+                rocketIcon.classList.remove('hidden');
+                statusText.textContent = 'آی‌پی مورد قبول است، در حال ارسال به سرور اصلی...';
+                progressText.textContent = '50%';
+                anime({
+                    targets: progressBar,
+                    width: '50%',
+                    easing: 'easeInOutQuad',
+                    duration: 1500,
+                    update: function() {
+                        progressText.textContent = `${Math.round(parseFloat(progressBar.style.width))}%`;
+                    }
+                });
+                anime({
+                    targets: rocketIcon,
+                    translateY: [-10, 0],
+                    easing: 'easeInOutSine',
+                    duration: 1000,
+                    loop: true,
+                    direction: 'alternate'
+                });
+                anime({
+                    targets: '.fire',
+                    scale: [1, 1.1],
+                    easing: 'easeInOutSine',
+                    duration: 500,
+                    loop: true,
+                    direction: 'alternate'
+                });
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Step 3: Final registration (80%)
+                rocketIcon.classList.add('hidden');
+                flashIcon.classList.remove('hidden');
+                statusText.textContent = 'آی‌پی دریافت شد، در حال ثبت نهایی...';
+                progressText.textContent = '80%';
+                anime({
+                    targets: progressBar,
+                    width: '80%',
+                    easing: 'easeInOutQuad',
+                    duration: 1500,
+                    update: function() {
+                        progressText.textContent = `${Math.round(parseFloat(progressBar.style.width))}%`;
+                    }
+                });
+                anime({
+                    targets: flashIcon,
+                    scale: [1, 1.1],
+                    easing: 'easeInOutSine',
+                    duration: 1000,
+                    loop: true,
+                    direction: 'alternate'
+                });
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Step 4: Success (100%)
+                flashIcon.classList.add('hidden');
+                checkmark.classList.remove('hidden');
+                statusText.textContent = 'آی‌پی با موفقیت ثبت شد!';
+                progressText.textContent = '100%';
+                anime({
+                    targets: progressBar,
+                    width: '100%',
+                    easing: 'easeInOutQuad',
+                    duration: 1000,
+                    update: function() {
+                        progressText.textContent = `${Math.round(parseFloat(progressBar.style.width))}%`;
+                    }
+                });
+                anime({
+                    targets: checkmark,
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    easing: 'easeInOutSine',
+                    duration: 1000,
+                    delay: 500
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                statusText.textContent = '!خطایی رخ داد';
+                progressBar.style.background = '#EF4444';
+                progressText.style.color = '#EF4444';
+                errorMessage.textContent = 'مشکلی پیش آمد، لطفاً دوباره امتحان کنید!...';
+                errorMessage.classList.remove('hidden');
+                retryButton.classList.remove('hidden');
+            }
+        }
+
+        // Retry button functionality
+        document.getElementById('retry-button').addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        // Start progress when page loads
+        updateProgress();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'974b758c5d6ecc14',t:'MTc1NjEyODc4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
