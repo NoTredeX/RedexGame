@@ -23,7 +23,7 @@ logger.addHandler(stream_handler)
 
 load_dotenv()
 
-ADMIN_ID = "1631919159"
+ADMIN_ID = os.getenv("ADMIN_ID", "1631919159")
 IPDNS1 = os.getenv("IPDNS1")
 IPDNS2 = os.getenv("IPDNS2")
 SERVER_IP = "game.redexping.tech"
