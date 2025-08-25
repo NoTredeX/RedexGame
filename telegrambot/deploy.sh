@@ -69,7 +69,7 @@ if [ -z "$mysql_password" ]; then
     echo "Generated MYSQL_PASSWORD: $mysql_password"
 fi
 
-# 10. Create .env file with UTF-8 encoding and database host
+# 10. Create .env file with UTF-8 encoding and correct database host
 echo "Creating .env file..."
 cat > .env << EOL
 BOT_TOKEN=$bot_token
@@ -78,7 +78,7 @@ MYSQL_USER=root
 MYSQL_PASSWORD=$mysql_password
 IPDNS1=$ipdns1
 IPDNS2=$ipdns2
-MYSQL_HOST=db
+MYSQL_HOST=127.0.0.1
 EOL
 
 # 11. Set up MySQL database
