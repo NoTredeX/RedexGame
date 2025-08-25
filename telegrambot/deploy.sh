@@ -16,9 +16,9 @@ sh get-docker.sh
 curl -L "https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-# 3. Install Python modules
-echo "Installing Python modules..."
-pip3 install "python-telegram-bot[job-queue]==22.3" mysql-connector-python==9.4.0 python-dotenv==1.1.1 requests==2.32.5 flask==3.1.1
+# 3. Install Python modules with force reinstall
+echo "Installing Python modules with force reinstall..."
+pip3 install --force-reinstall "python-telegram-bot[job-queue]==22.3" mysql-connector-python==9.4.0 python-dotenv==1.1.1 requests==2.32.5 flask==3.1.1
 
 # 4. Create project directory
 echo "Creating project directory..."
@@ -138,7 +138,7 @@ docker compose up -d
 echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install --force-reinstall -r requirements.txt
 python3 bot.py &
 python3 web.py &
 deactivate
