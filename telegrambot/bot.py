@@ -43,9 +43,9 @@ def acquire_lock():
 def get_db_connection():
     try:
         conn = mysql.connector.connect(
-            host="127.0.0.1",
+            host=os.getenv("MYSQL_HOST", "db"),  # پیش‌فرض db برای Docker
             port=3307,
-            user=os.getenv("MYSQL_USER"),
+            user=os.getenv("MYSQL_USER", "root"),
             password=os.getenv("MYSQL_PASSWORD"),
             database="dnsbot",
             autocommit=True
