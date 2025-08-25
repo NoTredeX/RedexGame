@@ -18,7 +18,7 @@ echo "Creating project directory..."
 mkdir -p /root/RedexGame/telegrambot
 cd /root/RedexGame/telegrambot
 
-# 4. Clone repository from GitHub (self-clone to get other files)
+# 4. Clone repository from GitHub
 echo "Cloning repository from GitHub..."
 git clone https://github.com/NoTredeX/RedexGame.git temp_repo
 cp -r temp_repo/telegrambot/* .
