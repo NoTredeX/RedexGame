@@ -171,15 +171,17 @@ echo "Starting Docker containers with delay..."
 docker compose up -d
 sleep 10  # Wait for MySQL to start
 if ! docker ps -q | grep -q .; then
-    echo "Error: Docker container failed to start. Restarting..."
+    echo "Error: Docker container failed to start. Checking logs..."
+    docker logs $(docker ps -aq 2>/dev/null) 2>/dev/null || echo "No containers to log"
     docker compose down
     docker compose up -d
     sleep 10
 fi
-# Check MySQL logs if it fails
+# Verify MySQL is running
 if ! mysqladmin -u root -p"$mysql_password" -h 127.0.0.1 -P 3307 ping 2>/dev/null; then
-    echo "Error: MySQL is not running. Checking logs..."
-    docker logs $(docker ps -aq) 2>/dev/null
+    echo "Error: MySQL is not running. Please check Docker logs."
+    docker logs $(docker ps -aq 2>/dev/null)
+    exit 1
 fi
 
 # 15. Free port 5000 and set up Python virtual environment
