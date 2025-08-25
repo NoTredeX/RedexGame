@@ -25,10 +25,15 @@ echo "Updating system and installing prerequisites..."
 apt update && apt upgrade -y
 apt install -y python3 python3-pip python3-venv mysql-server docker.io git
 
-# 4. Start Docker service
-echo "Starting Docker service..."
+# 4. Start and verify Docker service
+echo "Starting and verifying Docker service..."
 systemctl start docker
 systemctl enable docker
+if ! systemctl is-active --quiet docker; then
+    echo "Error: Docker service failed to start. Restarting..."
+    systemctl restart docker
+    sleep 5
+fi
 
 # 5. Install Docker Compose
 echo "Installing Docker Compose..."
@@ -156,11 +161,9 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-    networks:
-      - app_network
-networks:
-  app_network:
-    driver: bridge
+    network_mode: host  # Use host network to ensure accessibility
+volumes:
+  db_data:
 EOL
 
 # 14. Start Docker containers with delay and check
@@ -172,6 +175,11 @@ if ! docker ps -q | grep -q .; then
     docker compose down
     docker compose up -d
     sleep 10
+fi
+# Check MySQL logs if it fails
+if ! mysqladmin -u root -p"$mysql_password" -h 127.0.0.1 -P 3307 ping 2>/dev/null; then
+    echo "Error: MySQL is not running. Checking logs..."
+    docker logs $(docker ps -aq) 2>/dev/null
 fi
 
 # 15. Free port 5000 and set up Python virtual environment
